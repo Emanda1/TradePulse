@@ -273,12 +273,12 @@ function vIntake(){
   const mine=S.jobs.filter(j=>j.extraction&&j.createdBy===me()).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,5);
   let top;
   if(S.busy&&S.busy.kind==='extract'){
-    top=`<div class="drop"><h2>${esc(S.busy.msg)}</h2><p class="muted">${S.busy.files} page${S.busy.files===1?'':'s'} sent to Claude. A multi-line invoice can take a minute.</p><button class="btn ghost" data-act="stop">Stop</button></div>`;
+    top=`<div class="drop"><h2>${esc(S.busy.msg)}</h2><p class="muted">${S.busy.files} page${S.busy.files===1?'':'s'} sent to the algorithm. A multi-line invoice can take a minute.</p><button class="btn ghost" data-act="stop">Stop</button></div>`;
   }else{
     top=`<div class="drop" id="drop"><h2>Read an invoice or packing list</h2>
     <p class="muted" style="max-width:56ch;margin:0 auto 14px">Add photos or PDFs of the commercial invoice and packing list for one shipment, up to ${S.maxImgs} pages. You check every line before anything is saved or submitted.</p>
     <div class="row-end" style="justify-content:center"><label class="btn" for="fileIn" ${S.me.canWrite?'':'aria-disabled="true"'}>Choose files</label><input id="fileIn" type="file" accept="image/*,application/pdf" multiple hidden><button class="btn ghost" data-act="manual">Enter lines by hand</button></div>
-    ${S.ready&&!sampleCap?'<p class="note">Reading with Claude is not available in this view. You can still enter lines by hand.</p>':'<p class="note">The first read asks you to allow Claude to use your Claude account. Pages are saved with the record so your admin can compare them.</p>'}</div>`;
+    ${S.ready&&!sampleCap?'<p class="note">Automatic reading is not available in this view. You can still enter lines by hand.</p>':'<p class="note">The algorithm can misread a page, so check every line before you submit. The first read asks you to confirm permission. Pages are saved with the record so your admin can compare them.</p>'}</div>`;
   }
   const rec=mine.length?`<div class="list">${mine.map(j=>`<button class="li" data-act="open" data-id="${j.id}"><span class="sp"><div class="t">${esc(j.client||'No client')} <span class="mono muted">${esc(j.container||'')}</span></div><div class="s">${esc(j.extraction.supplier||'Supplier not read')} · ${j.extraction.items.length} lines · ${fmtWhen(j.updatedAt)}</div></span>${stateChip(j)}</button>`).join('')}</div>`:empty('No extractions yet','Your recent invoice readings will be listed here.');
   return `<section class="sec">${top}</section><section class="sec"><h2>Your recent readings</h2>${rec}</section>`;
@@ -427,11 +427,11 @@ Rules:
 - "conf" is your own estimate, per field, that you read it correctly. Use 95 or more only when the text is sharp and unambiguous, 80 to 94 when part of it is unclear, and below 80 when you are guessing or it is hard to read.
 - Add a warning for anything illegible, cut off, handwritten or inconsistent, for example line values that do not add up to the total.
 - If the pages are not a trade document, return docType "other" and an empty items array.`;
-const ERR={cancelled:'',not_granted:'You chose not to allow Claude, so the pages were not read. You can enter the lines by hand.',rate_limited:'Too many requests just now. Wait a minute, then try again.',invalid_json:'The reply could not be turned into lines. Try again with sharper, straight-on pages.',images_unavailable:'This view cannot send images to Claude.',pdf:'The PDF could not be opened here. Photograph or screenshot the pages instead.',img:'One of the files is not a readable image. Photos in HEIC format may need to be shared as JPEG.',sampling_disabled:'Claude is not available for this account.'};
+const ERR={cancelled:'',not_granted:'You did not give permission, so the pages were not read. You can enter the lines by hand.',rate_limited:'Too many requests just now. Wait a minute, then try again.',invalid_json:'The reply could not be turned into lines. Try again with sharper, straight-on pages.',images_unavailable:'This view cannot send images for reading.',pdf:'The PDF could not be opened here. Photograph or screenshot the pages instead.',img:'One of the files is not a readable image. Photos in HEIC format may need to be shared as JPEG.',sampling_disabled:'Automatic reading is not available for this account.'};
 async function handleFiles(fl){
   const files=[...fl];if(!files.length)return;
   if(!S.me.canWrite){toast('You have read-only access here.');return}
-  if(!sampleCap){toast('Reading with Claude is not available in this view.');return}
+  if(!sampleCap){toast('Automatic reading is not available in this view.');return}
   S.ctl=new AbortController();S.busy={kind:'extract',msg:'Preparing pages…',files:files.length};render(true);
   try{
     const blobs=[];
@@ -442,7 +442,7 @@ async function handleFiles(fl){
     }
     if(!blobs.length)throw {code:'img'};
     if(S.ctl.signal.aborted)throw {code:'cancelled'};
-    S.busy={kind:'extract',msg:'Claude is reading the pages…',files:blobs.length};render(true);
+    S.busy={kind:'extract',msg:'The algorithm is reading the pages…',files:blobs.length};render(true);
     const r=await sampleCap.json(PROMPT,{images:blobs,signal:S.ctl.signal});
     if(!r||typeof r!=='object'||Array.isArray(r))throw {code:'invalid_json'};
     if(r.docType==='other'||!Array.isArray(r.items)||!r.items.length){S.busy=null;toast('No invoice lines were found on those pages.');render(true);return}
