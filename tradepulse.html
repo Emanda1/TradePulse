@@ -1,0 +1,638 @@
+<title>TradePulse</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: a clearance desk. Header with role, tab strip, then one working surface.
+   Lists first, detail in a full-width sheet with the source pages beside the extracted lines. */
+:root{
+  --bg:#EDF0EF; --surface:#FFFFFF; --surface2:#F4F7F6; --line:#D3DAD8; --ink:#13212A; --muted:#566871;
+  --accent:#0E5A62; --accent-ink:#FFFFFF; --ok:#1E7A4B; --ok-bg:#DDF0E5; --warn:#8F5506; --warn-bg:#F8E8CC;
+  --bad:#B0281F; --bad-bg:#F7DAD6; --info-bg:#DCEBEE;
+  --f-display:'Archivo',system-ui,sans-serif; --f-body:'Public Sans',system-ui,sans-serif; --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0D1418; --surface:#142027; --surface2:#1A2830; --line:#2A3B44; --ink:#E4EDEF; --muted:#8FA4AD;
+  --accent:#59B6BF; --accent-ink:#06191C; --ok:#5FD08F; --ok-bg:#12301F; --warn:#E6B05A; --warn-bg:#35280F;
+  --bad:#F08A80; --bad-bg:#3A1714; --info-bg:#14333A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1418; --surface:#142027; --surface2:#1A2830; --line:#2A3B44; --ink:#E4EDEF; --muted:#8FA4AD;
+  --accent:#59B6BF; --accent-ink:#06191C; --ok:#5FD08F; --ok-bg:#12301F; --warn:#E6B05A; --warn-bg:#35280F;
+  --bad:#F08A80; --bad-bg:#3A1714; --info-bg:#14333A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;
+  padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto;padding-block:20px 56px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:18px;font-weight:700} h3{font-size:14px;font-weight:700}
+.mono{font-family:var(--f-mono);font-size:12.5px}
+.muted{color:var(--muted)} .small{font-size:12px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-bottom:14px}
+.brand h1{font-size:26px;font-weight:800}
+.brand h1 span{color:var(--accent)}
+.brand .sub{font:500 11px var(--f-mono);letter-spacing:.12em;color:var(--muted);margin-top:2px}
+.who{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;font:500 11.5px var(--f-mono);padding:3px 8px;border-radius:3px;background:var(--surface2);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.g,.b-g{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.chip.a,.b-a{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.chip.r,.b-r{background:var(--bad-bg);color:var(--bad);border-color:transparent}
+.chip.i{background:var(--info-bg);color:var(--accent);border-color:transparent}
+.b{display:inline-flex;align-items:center;font:500 11px var(--f-mono);padding:2px 7px;border-radius:3px;white-space:nowrap}
+.b-h{background:var(--info-bg);color:var(--accent)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;margin-bottom:20px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font:600 13.5px var(--f-body);padding:10px 14px;cursor:pointer;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs .n{font:500 11px var(--f-mono);background:var(--accent);color:var(--accent-ink);border-radius:9px;padding:0 6px}
+.banner{background:var(--info-bg);color:var(--ink);border-radius:4px;padding:9px 12px;margin-bottom:14px;font-size:13px}
+.banner.warn{background:var(--warn-bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);border-radius:4px;padding:8px 14px;font-weight:600;cursor:pointer}
+.btn:hover{filter:brightness(1.08)} .btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{background:var(--surface2)}
+.btn.bad{background:transparent;color:var(--bad);border-color:var(--bad)}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:60px}
+label.f{display:flex;flex-direction:column;gap:4px;font:600 11px var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+label.f input,label.f select,label.f textarea{text-transform:none;letter-spacing:0;font:400 14px var(--f-body);color:var(--ink)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.row-end{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sp{flex:1}
+.sec{margin-bottom:28px}
+.sec>h2{margin-bottom:10px;display:flex;gap:10px;align-items:baseline}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+table{width:100%;border-collapse:collapse}
+th{font:600 11px var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--surface2)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.empty{border:1px dashed var(--line);border-radius:6px;padding:28px 18px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font:700 15px var(--f-display);margin-bottom:4px}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.li{display:flex;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-top:0;width:100%}
+.li:last-child{border-bottom:0} .li:hover{background:var(--surface2)}
+.li .t{font-weight:600} .li .s{font-size:12.5px;color:var(--muted)}
+.drop{border:2px dashed var(--line);border-radius:8px;padding:34px 18px;text-align:center;background:var(--surface)}
+.drop.over{border-color:var(--accent);background:var(--info-bg)}
+.drop h2{margin-bottom:6px}
+.stats{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);margin:2px 0 22px}
+.stats b{color:var(--ink);font:700 18px var(--f-display);margin-right:4px}
+.sheet-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:start}
+@media (max-width:900px){.sheet-grid{grid-template-columns:minmax(0,1fr)}}
+.src{border:1px solid var(--line);border-radius:6px;background:var(--surface2);max-height:78vh;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+.src img{width:100%;height:auto;border-radius:3px;display:block;background:#fff}
+@media (min-width:901px){.src{position:sticky;top:12px}}
+.it input{padding:5px 7px;font-size:13px}
+.it .hs{font-family:var(--f-mono);width:128px} .it .q{width:70px;text-align:right} .it .u{width:64px} .it .v{width:104px;text-align:right}
+.fc-a{border-color:var(--warn)!important;background:var(--warn-bg)!important}
+.fc-r{border-color:var(--bad)!important;background:var(--bad-bg)!important}
+.fc-h{border-color:var(--accent)!important}
+.warnlist{margin:8px 0 0;padding-left:18px;color:var(--warn)}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.foot{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:5px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;max-width:90vw}
+#toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>Trade<span>Pulse</span></h1><div class="sub">CLEARANCE DESK · TEMA · TAKORADI</div></div>
+    <div class="who" id="who"></div>
+  </header>
+  <div id="banner"></div>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav>
+  <main id="view"></main>
+  <footer class="foot">TradePulse does not connect to ICUMS and never holds ICUMS logins. Your agents file declarations themselves, in their own ICUMS session. Badges show how clearly a page was read, not whether an HS code is the right classification for the goods.</footer>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayISO=()=>new Date().toISOString().slice(0,10);
+const fmtDate=iso=>{if(!iso)return '—';const d=new Date(iso+'T00:00:00');return isNaN(d)?esc(iso):d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})};
+const fmtWhen=ms=>ms?new Date(ms).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+const daysUntil=iso=>{if(!iso)return null;const a=new Date(iso+'T00:00:00'),b=new Date(todayISO()+'T00:00:00');return Math.round((a-b)/864e5)};
+const money=n=>(Number(n)||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+let toastT;const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),3200)};
+const csvCell=v=>{v=String(v==null?'':v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+const toCsv=rows=>rows.map(r=>r.map(csvCell).join(',')).join('\n');
+
+const TERMINALS=['MPS Terminal 3','Golden Jubilee','Takoradi Container Terminal','Other'];
+const STATUSES=['Awaiting Docs','Filed','Assessed','Released','Cleared'];
+
+// ISO 6346 container number check digit
+const ISO_VAL=(()=>{const m={};let n=10;for(const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'){if(n%11===0)n++;m[ch]=n++}return m})();
+function refCheck(raw){
+  const s=String(raw||'').toUpperCase().replace(/[\s\-]/g,'');
+  if(/^[A-Z]{4}\d{7}$/.test(s)){
+    let sum=0;for(let i=0;i<10;i++){const v=i<4?ISO_VAL[s[i]]:Number(s[i]);sum+=v*Math.pow(2,i)}
+    const d=(sum%11)%10;return d===Number(s[10])?{kind:'container',ok:true}:{kind:'container',ok:false,expect:d};
+  }
+  if(/^[A-HJ-NPR-Z0-9]{17}$/.test(s))return {kind:'vin',ok:true};
+  return s?{kind:'other'}:{kind:'none'};
+}
+function refChip(raw){
+  const c=refCheck(raw);
+  if(c.kind==='container')return c.ok?'<span class="chip g" title="Check digit matches ISO 6346">check digit ok</span>':'<span class="chip r" title="The last digit should be '+c.expect+' for this prefix and serial">check digit mismatch</span>';
+  if(c.kind==='vin')return '<span class="chip i">chassis (VIN) format</span>';
+  return '';
+}
+
+// HS codes and confidence
+const normHS=s=>String(s||'').replace(/[^0-9]/g,'');
+const hsValid=s=>{const d=normHS(s);return d.length>=6&&d.length<=10};
+function fmtHS(s){const d=normHS(s);const g=[4,2,2,2];let o=[],p=0;for(const n of g){if(p>=d.length)break;o.push(d.slice(p,p+n));p+=n}return o.join('.')}
+const tier=c=>c>=95?'g':c>=80?'a':'r';
+const clamp=n=>Math.max(0,Math.min(100,Math.round(Number(n)||0)));
+function itemConf(it){const o=it.o||{hs:0,qty:0,value:0};return Math.min(o.hs,o.qty,o.value)}
+function fieldTier(it,f){return it.e&&it.e[f]?'h':tier(it.o[f])}
+function itemBlocked(it){
+  if(!String(it.desc||'').trim())return 'a line has no description';
+  if(!hsValid(it.hs))return 'a line has no valid HS code (6 to 10 digits)';
+  for(const f of ['hs','qty','value']) if(it.o[f]<80&&!(it.e&&it.e[f]))return 'a red field still needs to be corrected by hand';
+  return '';
+}
+function analyse(ex){
+  const items=ex.items||[];const sum=items.reduce((a,i)=>a+(Number(i.value)||0),0);const declared=Number(ex.total)||0;
+  const mismatch=declared>0&&Math.abs(sum-declared)/declared>0.01;
+  const counts={g:0,a:0,r:0};items.forEach(i=>counts[tier(itemConf(i))]++);
+  let blocked=items.length?'':'add at least one line';
+  for(const i of items){const b=itemBlocked(i);if(b){blocked=b;break}}
+  return {sum,declared,mismatch,counts,blocked,needsAdmin:mismatch||counts.a>0||counts.r>0,n:items.length};
+}
+function blankItem(manual){return {desc:'',hs:'',hsSource:manual?'none':'none',qty:1,unit:'pcs',value:0,o:{hs:100,qty:100,value:100},e:manual?{hs:true,qty:true,value:true}:{}}}
+function fromModel(r){
+  const items=(Array.isArray(r.items)?r.items:[]).map(m=>{
+    const c=m.conf||{};let hs=normHS(m.hs),src=m.hsSource==='printed'&&hs?'printed':'none';
+    if(!hs&&m.suggestedHs){hs=normHS(m.suggestedHs);src='suggested'}
+    const o={hs:clamp(c.hs),qty:clamp(c.qty),value:clamp(c.value)};
+    if(src==='suggested')o.hs=Math.min(o.hs,85);
+    if(!hsValid(hs))o.hs=Math.min(o.hs,60);
+    return {desc:String(m.desc||''),hs,hsSource:src,qty:Number(m.qty)||0,unit:String(m.unit||''),netKg:m.netKg==null?null:Number(m.netKg),value:Number(m.value)||0,o,e:{}};
+  });
+  return {supplier:String(r.supplier||''),invoiceNo:String(r.invoiceNo||''),invoiceDate:String(r.invoiceDate||''),currency:String(r.currency||''),incoterm:String(r.incoterm||''),total:r.total==null?'':Number(r.total),items,warnings:(Array.isArray(r.warnings)?r.warnings:[]).map(String).slice(0,12)};
+}
+const S={ready:false,local:false,tab:'overview',jobs:[],approvals:{},audit:[],
+  me:{id:null,name:'',isAdmin:false,canWrite:true},sheet:null,logEdit:null,logForm:null,
+  qFilter:'pending',jFilter:{q:'',status:''},busy:null,ctl:null,names:{},maxImgs:6,fp:''};
+let db=null,userCap=null,sampleCap=null,dlCap=null,assetsCap=null;
+const mem={jobs:new Map(),approvals:new Map(),audit:new Map()},memSubs={jobs:[],approvals:[],audit:[]};
+const memDocs=c=>[...mem[c].entries()].map(([id,d])=>({id,...d}));
+const memNotify=c=>memSubs[c].forEach(f=>f(memDocs(c)));
+const rid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const store={
+  sub(c,cb){
+    if(db){const q=c==='audit'?db.collection(c).orderBy('at','desc').limit(300):db.collection(c);
+      return q.onSnapshot(s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))),e=>{console.warn(c,e);if(e&&e.code==='revoked')toast('Shared records are no longer available in this view.')})}
+    memSubs[c].push(cb);memNotify(c);return ()=>{};
+  },
+  async set(c,id,data){if(db)return db.doc(c+'/'+id).set(data);mem[c].set(id,data);memNotify(c)},
+  async add(c,data){if(db){const r=await db.collection(c).add(data);return r.id}const id=rid();mem[c].set(id,data);memNotify(c);return id},
+  async del(c,id){if(db)return db.doc(c+'/'+id).delete();mem[c].delete(id);memNotify(c)},
+  newId(c){return db?db.collection(c).doc().id:rid()}
+};
+const jobById=id=>S.jobs.find(j=>j.id===id);
+const nameOf=id=>!id?'Someone':(id==='local'?'You':(id===S.me.id?(S.me.name||'You'):(S.names[id]||'Someone')));
+async function resolveNames(ids){
+  if(!userCap)return;
+  const need=[...new Set(ids.filter(i=>i&&i!=='local'&&i!==S.me.id&&!(i in S.names)))];
+  if(!need.length)return;
+  try{const ps=await userCap.profiles(need);need.forEach(i=>{S.names[i]=(ps[i]&&ps[i].name)||''});scheduleRender()}catch(e){need.forEach(i=>S.names[i]='')}
+}
+async function logEvent(action,job,summary){
+  try{await store.add('audit',{at:Date.now(),by:S.me.id||'local',action,jobId:job?job.id:null,ref:job?(job.container||job.client||''):'',summary:summary||''})}catch(e){console.warn('audit',e)}
+}
+let rT=0;function scheduleRender(){clearTimeout(rT);rT=setTimeout(render,40)}
+function rState(j){
+  if(!j.extraction)return 'none';if(!j.submittedAt)return 'draft';
+  const ap=S.approvals[j.id];if(ap&&ap.submittedAt===j.submittedAt)return ap.decision==='approved'?'approved':'returned';
+  return j.needsAdmin?'pending':'auto';
+}
+const RS={draft:['Draft','i'],pending:['Awaiting sign-off','a'],returned:['Returned','r'],approved:['Approved','g'],auto:['Cleared on review','g'],none:['','']};
+const stateChip=j=>{const s=rState(j),r=RS[s];return r[0]?`<span class="chip ${r[1]}">${r[0]}</span>`:''};
+function freeChip(iso,status){
+  if(!iso||status==='Cleared')return '<span class="muted">—</span>';
+  const d=daysUntil(iso);
+  if(d<0)return `<span class="chip r">overdue ${-d} d</span>`;
+  if(d===0)return '<span class="chip r">ends today</span>';
+  return `<span class="chip ${d<=3?'a':''}">${d} d left</span>`;
+}
+const mix=j=>{const c=analyse(j.extraction).counts;return `<span class="b b-g">${c.g}</span> <span class="b b-a">${c.a}</span> <span class="b b-r">${c.r}</span>`};
+const ACT={created:'logged',extracted:'saved an extraction for',submitted:'submitted for review',cleared:'cleared on review',approved:'approved',returned:'returned',status:'updated',deleted:'removed',edited:'edited'};
+const empty=(t,s)=>`<div class="empty"><strong>${t}</strong>${s}</div>`;
+const me=()=>S.me.id||'local';
+
+function renderChrome(){
+  const role=S.local?'Local session':(S.me.isAdmin?'Admin':'Staff');
+  $('#who').innerHTML=(S.me.name?`<span class="small muted">${esc(S.me.name)}</span>`:'')+`<span class="chip ${S.me.isAdmin?'i':''}">${role}</span>`;
+  const pend=S.jobs.filter(j=>rState(j)==='pending').length;
+  const ret=S.jobs.filter(j=>rState(j)==='returned'&&j.createdBy===me()).length;
+  const qn=S.me.isAdmin?pend:ret;
+  const T=[['overview','Overview',0],['intake','Read invoice',0],['queue','Verification',qn],['log','Consignments',0],['audit','Audit trail',0]];
+  $('#tabs').innerHTML=T.map(([k,l,n])=>`<button role="tab" data-act="tab" data-v="${k}" aria-selected="${S.tab===k&&!S.sheet}">${l}${n?`<span class="n">${n}</span>`:''}</button>`).join('');
+  let b='';
+  if(!S.ready)b='<div class="banner">Connecting to shared records…</div>';
+  else if(S.local)b='<div class="banner warn">Shared storage is not available in this view. Records stay in this tab only and are lost when you close it. You act as admin here.</div>';
+  else if(!S.me.canWrite)b='<div class="banner">You can read records here but not change them. Ask the owner for contributor access.</div>';
+  $('#banner').innerHTML=b;
+}
+function render(force){
+  if(!force&&((S.sheet&&S.sheet.mode==='edit')||S.logEdit)){renderChrome();return}
+  renderChrome();
+  const ae=document.activeElement,aid=ae&&ae.id,as=ae&&ae.selectionStart;
+  const v=$('#view');
+  v.innerHTML=S.sheet?vSheet():({overview:vOverview,intake:vIntake,queue:vQueue,log:vLog,audit:vAudit}[S.tab]||vOverview)();
+  if(aid){const n=document.getElementById(aid);if(n){n.focus();try{if(as!=null)n.setSelectionRange(as,as)}catch(e){}}}
+  resolveNames([...S.jobs.map(j=>j.createdBy),...S.audit.map(a=>a.by),...Object.values(S.approvals).map(a=>a.by)]);
+}
+
+function vOverview(){
+  const open=S.jobs.filter(j=>j.status!=='Cleared');
+  const pend=S.jobs.filter(j=>rState(j)==='pending');
+  const ret=S.jobs.filter(j=>rState(j)==='returned'&&j.createdBy===me());
+  const ending=open.filter(j=>{const d=daysUntil(j.freeEnd);return d!=null&&d<=3}).sort((a,b)=>(a.freeEnd||'').localeCompare(b.freeEnd||''));
+  const rows=[];
+  if(S.me.isAdmin)pend.forEach(j=>rows.push(`<button class="li" data-act="open" data-id="${j.id}"><span class="sp"><div class="t">${esc(j.client||'No client')} <span class="mono muted">${esc(j.container||'')}</span></div><div class="s">${j.extraction.items.length} lines · submitted by ${esc(nameOf(j.createdBy))}</div></span>${mix(j)}<span class="chip a">Needs sign-off</span></button>`));
+  ret.forEach(j=>rows.push(`<button class="li" data-act="open" data-id="${j.id}"><span class="sp"><div class="t">${esc(j.client||'No client')} <span class="mono muted">${esc(j.container||'')}</span></div><div class="s">${esc(S.approvals[j.id].note||'Returned without a note')}</div></span><span class="chip r">Fix and resubmit</span></button>`));
+  ending.forEach(j=>rows.push(`<button class="li" data-act="logedit" data-id="${j.id}"><span class="sp"><div class="t">${esc(j.client||'No client')} <span class="mono muted">${esc(j.container||'')}</span></div><div class="s">Free time ends ${fmtDate(j.freeEnd)} · ${esc(j.terminal||'No terminal')}</div></span>${freeChip(j.freeEnd,j.status)}</button>`));
+  const act=S.audit.slice(0,8).map(a=>`<tr><td>${esc(nameOf(a.by))} ${ACT[a.action]||esc(a.action)} <span class="mono">${esc(a.ref)}</span></td><td class="muted small" style="white-space:nowrap">${fmtWhen(a.at)}</td></tr>`).join('');
+  return `<div class="stats"><span><b>${open.length}</b>open consignments</span><span><b>${pend.length}</b>awaiting sign-off</span><span><b>${ending.length}</b>free time ending within 3 days</span></div>
+  <section class="sec"><h2>Needs attention</h2>${rows.length?`<div class="list">${rows.join('')}</div>`:empty('Nothing is waiting','Invoices sent for sign-off, items returned to you and consignments near the end of free time appear here.')}</section>
+  <section class="sec"><h2>Start</h2><div class="row-end"><button class="btn" data-act="tab" data-v="intake">Read an invoice</button><button class="btn ghost" data-act="logedit" data-id="new">Log a consignment</button></div></section>
+  <section class="sec"><h2>Recent activity</h2>${act?`<div class="tbl-wrap"><table><tbody>${act}</tbody></table></div>`:empty('No activity yet','Every extraction, approval and status change is recorded here with who did it and when.')}</section>`;
+}
+
+function vIntake(){
+  const mine=S.jobs.filter(j=>j.extraction&&j.createdBy===me()).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,5);
+  let top;
+  if(S.busy&&S.busy.kind==='extract'){
+    top=`<div class="drop"><h2>${esc(S.busy.msg)}</h2><p class="muted">${S.busy.files} page${S.busy.files===1?'':'s'} sent to Claude. A multi-line invoice can take a minute.</p><button class="btn ghost" data-act="stop">Stop</button></div>`;
+  }else{
+    top=`<div class="drop" id="drop"><h2>Read an invoice or packing list</h2>
+    <p class="muted" style="max-width:56ch;margin:0 auto 14px">Add photos or PDFs of the commercial invoice and packing list for one shipment, up to ${S.maxImgs} pages. You check every line before anything is saved or submitted.</p>
+    <div class="row-end" style="justify-content:center"><label class="btn" for="fileIn" ${S.me.canWrite?'':'aria-disabled="true"'}>Choose files</label><input id="fileIn" type="file" accept="image/*,application/pdf" multiple hidden><button class="btn ghost" data-act="manual">Enter lines by hand</button></div>
+    ${S.ready&&!sampleCap?'<p class="note">Reading with Claude is not available in this view. You can still enter lines by hand.</p>':'<p class="note">The first read asks you to allow Claude to use your Claude account. Pages are saved with the record so your admin can compare them.</p>'}</div>`;
+  }
+  const rec=mine.length?`<div class="list">${mine.map(j=>`<button class="li" data-act="open" data-id="${j.id}"><span class="sp"><div class="t">${esc(j.client||'No client')} <span class="mono muted">${esc(j.container||'')}</span></div><div class="s">${esc(j.extraction.supplier||'Supplier not read')} · ${j.extraction.items.length} lines · ${fmtWhen(j.updatedAt)}</div></span>${stateChip(j)}</button>`).join('')}</div>`:empty('No extractions yet','Your recent invoice readings will be listed here.');
+  return `<section class="sec">${top}</section><section class="sec"><h2>Your recent readings</h2>${rec}</section>`;
+}
+
+function vQueue(){
+  const F=[['pending','Awaiting sign-off'],['returned','Returned'],['draft','Drafts'],['done','Cleared'],['all','All']];
+  const f=S.qFilter;
+  let list=S.jobs.filter(j=>j.extraction);
+  const st=j=>rState(j);
+  if(f==='pending')list=list.filter(j=>st(j)==='pending');else if(f==='returned')list=list.filter(j=>st(j)==='returned');else if(f==='draft')list=list.filter(j=>st(j)==='draft');else if(f==='done')list=list.filter(j=>st(j)==='approved'||st(j)==='auto');
+  list.sort((a,b)=>(b.submittedAt||b.updatedAt||0)-(a.submittedAt||a.updatedAt||0));
+  const seg=F.map(([k,l])=>`<button class="btn sm ${f===k?'':'ghost'}" data-act="qf" data-v="${k}">${l}</button>`).join('');
+  const body=list.length?`<div class="tbl-wrap"><table><thead><tr><th>Consignment</th><th>Supplier</th><th class="num">Lines</th><th>Reading</th><th>By</th><th>Updated</th><th>State</th></tr></thead><tbody>${list.map(j=>`<tr class="click" data-act="open" data-id="${j.id}"><td><div style="font-weight:600">${esc(j.client||'No client')}</div><div class="mono muted">${esc(j.container||'')}</div></td><td>${esc(j.extraction.supplier||'—')}<div class="small muted">${esc(j.extraction.invoiceNo||'')}</div></td><td class="num">${j.extraction.items.length}</td><td>${mix(j)}</td><td>${esc(nameOf(j.createdBy))}</td><td class="small muted">${fmtWhen(j.submittedAt||j.updatedAt)}</td><td>${stateChip(j)}</td></tr>`).join('')}</tbody></table></div>`
+    :empty(f==='pending'?'Nothing awaits sign-off':'Nothing here','Invoices with amber or red lines, or totals that do not add up, arrive here after the agent submits them. Fully green invoices clear on the agent’s own review.');
+  return `<section class="sec"><div class="row-end" style="margin-bottom:12px">${seg}</div>${body}<p class="note">Green, amber and red count lines by how clearly the page was read: 95 and above, 80 to 94, below 80.</p></section>`;
+}
+const fcls=(it,f)=>({a:'fc-a',r:'fc-r',h:'fc-h',g:''}[fieldTier(it,f)]);
+function hsNote(it){return it.hsSource==='suggested'&&!(it.e&&it.e.hs)?'<div style="margin-top:3px"><span class="b b-a">suggested, not printed</span></div>':''}
+function itemRow(it,i,edit){
+  const k=tier(itemConf(it));
+  if(edit)return `<tr class="it"><td><input id="it-${i}-desc" data-i="${i}" data-f="desc" value="${esc(it.desc)}" aria-label="Description"></td>
+  <td><input id="it-${i}-hs" class="hs ${fcls(it,'hs')}" data-i="${i}" data-f="hs" value="${esc(fmtHS(it.hs)||it.hs)}" inputmode="numeric" aria-label="HS code"><span id="hsn-${i}">${hsNote(it)}</span></td>
+  <td><input id="it-${i}-qty" class="q ${fcls(it,'qty')}" data-i="${i}" data-f="qty" value="${esc(it.qty)}" inputmode="decimal" aria-label="Quantity"></td>
+  <td><input id="it-${i}-unit" class="u" data-i="${i}" data-f="unit" value="${esc(it.unit)}" aria-label="Unit"></td>
+  <td><input id="it-${i}-value" class="v ${fcls(it,'value')}" data-i="${i}" data-f="value" value="${esc(it.value)}" inputmode="decimal" aria-label="Line value"></td>
+  <td id="badge-${i}"><span class="b b-${k}">${itemConf(it)}</span></td><td><button class="btn ghost sm" data-act="rmline" data-i="${i}" aria-label="Remove line">×</button></td></tr>`;
+  const w=(f,txt)=>{const t=fieldTier(it,f);return t==='a'||t==='r'?`<span class="b b-${t}">${txt}</span>`:(t==='h'?`${txt} <span class="b b-h">edited</span>`:txt)};
+  return `<tr><td>${esc(it.desc)}</td><td class="mono">${w('hs',esc(fmtHS(it.hs)||'—'))}${it.hsSource==='suggested'&&!(it.e&&it.e.hs)?'<div class="small muted">suggested</div>':''}</td><td class="num">${w('qty',esc(it.qty))}</td><td>${esc(it.unit)}</td><td class="num">${w('value',money(it.value))}</td><td><span class="b b-${k}">${itemConf(it)}</span></td></tr>`;
+}
+function sheetSummary(d){
+  const a=analyse(d.ex),c=a.counts;
+  let t=`${a.n} line${a.n===1?'':'s'} · <span class="b b-g">${c.g} green</span> <span class="b b-a">${c.a} amber</span> <span class="b b-r">${c.r} red</span>`;
+  t+=`<div class="small" style="margin-top:6px">Lines add up to <b>${money(a.sum)}</b>${a.declared?` and the invoice total is <b>${money(a.declared)}</b>. ${a.mismatch?'<span class="chip r">totals differ</span>':'<span class="chip g">match</span>'}`:'. No invoice total was read.'}</div>`;
+  t+=`<div class="small" style="margin-top:6px">${a.blocked?`<span class="chip r">Cannot submit yet</span> ${esc(a.blocked)}.`:(a.needsAdmin?'<span class="chip a">Goes to your admin for sign-off</span>':'<span class="chip g">Clears on your review</span> all lines are green and the total matches.')}</div>`;
+  return t;
+}
+function sheetActions(d){
+  const a=analyse(d.ex),dis=(a.blocked||!S.me.canWrite)?'disabled':'';
+  return `<button class="btn ghost" data-act="savedraft" ${S.me.canWrite?'':'disabled'}>Save draft</button><button class="btn" data-act="submit" ${dis}>${a.needsAdmin?'Submit for sign-off':'Submit'}</button><button class="btn bad" data-act="discard">${S.sheet.confirmDiscard?'Discard? Click again':'Discard'}</button>`;
+}
+function vSheet(){
+  const sh=S.sheet,d=sh.d,ex=d.ex,edit=sh.mode==='edit',j=sh.jobId?jobById(sh.jobId):null;
+  const srcs=d.sources.length?d.sources.map(s=>`<img src="${esc(s.url)}" alt="Source page">`).join(''):'<div class="small muted" style="padding:14px">No source pages were saved with this record.</div>';
+  const m=(k,l,type)=>edit?`<label class="f">${l}<input id="m-${k}" data-m="${k}" ${type?`type="${type}"`:''} value="${esc(k==='client'||k==='container'?d[k]:ex[k])}"></label>`:`<div><div class="small muted">${l}</div><div>${esc((k==='client'||k==='container'?d[k]:ex[k])||'—')}</div></div>`;
+  const attach=edit&&!sh.jobId?`<label class="f">Add to an existing consignment<select id="m-attach"><option value="">New consignment</option>${S.jobs.filter(x=>!x.extraction).map(x=>`<option value="${x.id}">${esc(x.client||'No client')} ${esc(x.container||'')}</option>`).join('')}</select></label>`:'';
+  const head=`<div class="row-end" style="margin-bottom:16px"><button class="btn ghost sm" data-act="back">← Back</button><h2>${edit?'Check the extracted lines':esc((d.client||'Extraction')+' '+(d.container||''))}</h2><span class="sp"></span>${j?stateChip(j):''}</div>`;
+  const table=`<div class="tbl-wrap" style="margin-top:14px"><table><thead><tr><th>Description</th><th>HS code</th><th class="num">Qty</th><th>Unit</th><th class="num">Value</th><th>Read</th>${edit?'<th></th>':''}</tr></thead><tbody id="itemsBody">${ex.items.map((it,i)=>itemRow(it,i,edit)).join('')}</tbody></table></div>`;
+  const warns=ex.warnings&&ex.warnings.length?`<ul class="warnlist">${ex.warnings.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>`:'';
+  let foot;
+  if(edit)foot=`<div class="panel" style="margin-top:14px"><div id="sheetSummary">${sheetSummary(d)}</div><label class="f" style="margin-top:12px">Notes for the admin<textarea id="m-notes" data-m="notes">${esc(sh.notes||'')}</textarea></label><div class="row-end" style="margin-top:12px" id="sheetActions">${sheetActions(d)}</div></div><p class="note">Badges show how clearly the page was read. They do not confirm that an HS code is correct for the goods. An HS code the model suggested because none was printed can never be green.</p>`;
+  else{
+    const st=j?rState(j):'none',ap=j&&S.approvals[j.id],mine=j&&j.createdBy===me();
+    let dec='';
+    if(j&&ap&&ap.submittedAt===j.submittedAt)dec=`<p class="note">${ap.decision==='approved'?'Approved':'Returned'} by ${esc(nameOf(ap.by))} on ${fmtWhen(ap.at)}${ap.note?': '+esc(ap.note):'.'}</p>`;
+    let ctl='';
+    if(st==='pending'&&S.me.isAdmin)ctl=`<label class="f" style="margin-top:12px">Note to the agent<textarea id="dec-note"></textarea></label><div class="row-end" style="margin-top:10px"><button class="btn" data-act="approve" ${S.me.canWrite?'':'disabled'}>Approve</button><button class="btn bad" data-act="return" ${S.me.canWrite?'':'disabled'}>Return for correction</button></div>`;
+    else if((st==='draft'||st==='returned')&&(mine||S.me.isAdmin))ctl=`<div class="row-end" style="margin-top:12px"><button class="btn" data-act="editjob">Edit and resubmit</button></div>`;
+    else if(st==='pending'&&!S.me.isAdmin)ctl='<p class="note">Waiting for an admin to sign off.</p>';
+    foot=`<div class="panel" style="margin-top:14px">${sheetSummary(d)}${j&&j.notes?`<p class="note">Agent notes: ${esc(j.notes)}</p>`:''}${dec}${ctl}</div>`;
+  }
+  return `${head}<div class="sheet-grid"><div class="src" aria-label="Source pages">${srcs}</div><div>
+  ${attach?`<div style="margin-bottom:12px">${attach}</div>`:''}<div class="grid2">${m('client','Client / importer')}${m('container','Container or chassis no.')}${m('supplier','Supplier')}${m('invoiceNo','Invoice no.')}${m('invoiceDate','Invoice date','date')}${m('currency','Currency')}${m('incoterm','Incoterm')}${m('total','Invoice total')}</div>
+  ${table}${edit?'<div style="margin-top:10px"><button class="btn ghost sm" data-act="addline">Add a line</button></div>':''}${warns}${foot}</div></div>`;
+}
+
+function jobSort(a,b){
+  const ca=a.status==='Cleared',cb=b.status==='Cleared';if(ca!==cb)return ca?1:-1;
+  if(a.freeEnd&&b.freeEnd)return a.freeEnd.localeCompare(b.freeEnd);if(a.freeEnd)return -1;if(b.freeEnd)return 1;
+  return (b.arrival||'').localeCompare(a.arrival||'');
+}
+function vLog(){
+  const f=S.jFilter,q=f.q.trim().toLowerCase();
+  let list=S.jobs.filter(j=>(!q||[j.client,j.container,j.boe].some(x=>String(x||'').toLowerCase().includes(q)))&&(!f.status||j.status===f.status)).sort(jobSort);
+  let form='';
+  if(S.logEdit){
+    const g=S.logForm,id=S.logEdit,isNew=id==='new';
+    form=`<div class="panel sec"><h2>${isNew?'Log a consignment':'Edit consignment'}</h2><div class="grid2">
+    <label class="f">Client / importer<input id="l-client" data-l="client" value="${esc(g.client)}"></label>
+    <label class="f">Container or chassis no.<input id="l-container" data-l="container" value="${esc(g.container)}" autocapitalize="characters"><span id="refchip" style="margin-top:2px">${refChip(g.container)}</span></label>
+    <label class="f">BoE number, if filed<input id="l-boe" data-l="boe" value="${esc(g.boe)}"></label>
+    <label class="f">Terminal<select id="l-terminal" data-l="terminal"><option value="">Not set</option>${TERMINALS.map(t=>`<option ${g.terminal===t?'selected':''}>${t}</option>`).join('')}</select></label>
+    <label class="f">Date of arrival<input id="l-arrival" type="date" data-l="arrival" value="${esc(g.arrival)}"></label>
+    <label class="f">Free time ends<input id="l-freeEnd" type="date" data-l="freeEnd" value="${esc(g.freeEnd)}"></label>
+    <label class="f">Status<select id="l-status" data-l="status">${STATUSES.map(t=>`<option ${g.status===t?'selected':''}>${t}</option>`).join('')}</select></label></div>
+    <label class="f" style="margin-top:12px">Notes<textarea id="l-notes" data-l="notes">${esc(g.notes)}</textarea></label>
+    <div class="row-end" style="margin-top:12px"><button class="btn" data-act="logsave" ${S.me.canWrite?'':'disabled'}>Save</button><button class="btn ghost" data-act="logcancel">Cancel</button>${!isNew&&S.me.isAdmin?`<span class="sp"></span><button class="btn bad" data-act="logdel">${S.logDel?'Remove? Click again':'Remove'}</button>`:''}</div>
+    <p class="note">The free time end date is the date you enter from the shipping line’s terms. TradePulse counts down to it and does not predict charges.</p></div>`;
+  }
+  const rows=list.map(j=>`<tr><td><div style="font-weight:600">${esc(j.client||'No client')}</div><div class="mono">${esc(j.container||'—')}</div><div style="margin-top:3px">${refChip(j.container)}</div></td>
+  <td>${esc(j.terminal||'—')}<div class="small muted">${j.boe?'BoE '+esc(j.boe):''}</div></td><td>${fmtDate(j.arrival)}</td><td>${freeChip(j.freeEnd,j.status)}<div class="small muted">${j.freeEnd?fmtDate(j.freeEnd):''}</div></td>
+  <td><select data-act="status" data-id="${j.id}" aria-label="Status" ${S.me.canWrite?'':'disabled'} style="width:auto">${STATUSES.map(t=>`<option ${j.status===t?'selected':''}>${t}</option>`).join('')}</select></td>
+  <td>${j.extraction?`<button class="btn ghost sm" data-act="open" data-id="${j.id}">Invoice ${stateChip(j)?'':''}</button> ${stateChip(j)}`:'<span class="muted small">none</span>'}</td>
+  <td><button class="btn ghost sm" data-act="logedit" data-id="${j.id}">Edit</button></td></tr>`).join('');
+  const table=list.length?`<div class="tbl-wrap"><table><thead><tr><th>Consignment</th><th>Terminal</th><th>Arrived</th><th>Free time</th><th>Status</th><th>Invoice</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
+    :empty(S.jobs.length?'No matches':'No consignments logged','Record the client, container or chassis number, arrival date and free-time end date, so nothing depends on a paper notebook. Use Log a consignment to add the first one.');
+  return `${form}<section class="sec"><div class="row-end" style="margin-bottom:12px"><input id="jq" placeholder="Search client, container or BoE" value="${esc(f.q)}" style="max-width:300px" aria-label="Search"><select id="js" aria-label="Filter by status" style="width:auto"><option value="">All statuses</option>${STATUSES.map(t=>`<option ${f.status===t?'selected':''}>${t}</option>`).join('')}</select><span class="sp"></span><button class="btn ghost sm" data-act="expjobs">Download CSV</button><button class="btn" data-act="logedit" data-id="new" ${S.me.canWrite?'':'disabled'}>Log a consignment</button></div>${table}</section>`;
+}
+function vAudit(){
+  const rows=S.audit.map(a=>`<tr><td class="small muted" style="white-space:nowrap">${fmtWhen(a.at)}</td><td>${esc(nameOf(a.by))}</td><td>${ACT[a.action]||esc(a.action)}</td><td class="mono">${esc(a.ref)}</td><td class="small muted">${esc(a.summary)}</td></tr>`).join('');
+  return `<section class="sec"><div class="row-end" style="margin-bottom:12px"><h2>Audit trail</h2><span class="sp"></span><button class="btn ghost sm" data-act="expaudit" ${S.audit.length?'':'disabled'}>Download CSV</button></div>
+  ${S.fp?`<p class="note" style="margin:0 0 10px">Last export fingerprint (SHA-256): <span class="mono" style="word-break:break-all">${esc(S.fp)}</span></p>`:''}
+  ${S.audit.length?`<div class="tbl-wrap"><table><thead><tr><th>When</th><th>Who</th><th>What</th><th>Consignment</th><th>Detail</th></tr></thead><tbody>${rows}</tbody></table></div>`:empty('No events yet','Each extraction, submission, approval and status change is recorded here with the person and the time.')}
+  <p class="note">Events are written from each person’s own session, and an admin can remove records. For an audit file, export regularly and keep the CSV; the fingerprint lets you show later that a saved file was not changed.</p></section>`;
+}
+store.update=async(c,id,p)=>{if(db)return db.doc(c+'/'+id).update(p);mem[c].set(id,{...(mem[c].get(id)||{}),...p});memNotify(c)};
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+function canvasBlob(src,w,h){
+  const s=Math.min(1,1800/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(src,0,0,c.width,c.height);
+  return new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej({code:'img'}),'image/jpeg',0.86));
+}
+async function imgToBlob(file){
+  const url=URL.createObjectURL(file);
+  try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej({code:'img'});i.src=url});return await canvasBlob(img,img.naturalWidth,img.naturalHeight)}
+  finally{URL.revokeObjectURL(url)}
+}
+let pdfP;
+function loadPdfJs(){
+  if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);if(pdfP)return pdfP;
+  pdfP=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=()=>{try{window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';res(window.pdfjsLib)}catch(e){rej(e)}};
+    s.onerror=()=>{pdfP=null;rej({code:'pdf'})};document.head.appendChild(s)});
+  return pdfP;
+}
+async function pdfToBlobs(file,max){
+  try{
+    const lib=await loadPdfJs(),doc=await lib.getDocument({data:await file.arrayBuffer()}).promise,out=[];
+    for(let p=1;p<=Math.min(doc.numPages,max);p++){
+      const pg=await doc.getPage(p),v0=pg.getViewport({scale:1}),sc=Math.min(3,1800/Math.max(v0.width,v0.height)),v=pg.getViewport({scale:sc});
+      const c=document.createElement('canvas');c.width=Math.round(v.width);c.height=Math.round(v.height);
+      await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;out.push(await canvasBlob(c,c.width,c.height));
+    }
+    return out;
+  }catch(e){throw {code:'pdf'}}
+}
+const PROMPT=`You are extracting data from a commercial invoice and/or packing list for a customs clearing agent in Ghana. The images are the pages of one shipment's documents, in order. Read only what is printed. Do not invent values.
+
+Reply with only one JSON object and no other text:
+{"docType":"invoice"|"packing_list"|"both"|"other","supplier":string,"invoiceNo":string,"invoiceDate":"YYYY-MM-DD" or "","currency":"3-letter code" or "","incoterm":string,"total":number or null,"items":[{"desc":string,"hs":string,"hsSource":"printed"|"none","suggestedHs":string,"qty":number,"unit":string,"netKg":number or null,"value":number,"conf":{"hs":0-100,"qty":0-100,"value":0-100}}],"warnings":[string]}
+
+Rules:
+- "hs" holds the HS code exactly as printed, digits only, or "" if none is printed. When none is printed, put your best 6-digit suggestion in "suggestedHs" and set "hsSource" to "none".
+- "value" is the line total as printed. "total" is the invoice total as printed, or null.
+- "conf" is your own estimate, per field, that you read it correctly. Use 95 or more only when the text is sharp and unambiguous, 80 to 94 when part of it is unclear, and below 80 when you are guessing or it is hard to read.
+- Add a warning for anything illegible, cut off, handwritten or inconsistent, for example line values that do not add up to the total.
+- If the pages are not a trade document, return docType "other" and an empty items array.`;
+const ERR={cancelled:'',not_granted:'You chose not to allow Claude, so the pages were not read. You can enter the lines by hand.',rate_limited:'Too many requests just now. Wait a minute, then try again.',invalid_json:'The reply could not be turned into lines. Try again with sharper, straight-on pages.',images_unavailable:'This view cannot send images to Claude.',pdf:'The PDF could not be opened here. Photograph or screenshot the pages instead.',img:'One of the files is not a readable image. Photos in HEIC format may need to be shared as JPEG.',sampling_disabled:'Claude is not available for this account.'};
+async function handleFiles(fl){
+  const files=[...fl];if(!files.length)return;
+  if(!S.me.canWrite){toast('You have read-only access here.');return}
+  if(!sampleCap){toast('Reading with Claude is not available in this view.');return}
+  S.ctl=new AbortController();S.busy={kind:'extract',msg:'Preparing pages…',files:files.length};render(true);
+  try{
+    const blobs=[];
+    for(const f of files){
+      if(blobs.length>=S.maxImgs)break;
+      if(f.type==='application/pdf'||/\.pdf$/i.test(f.name))blobs.push(...await pdfToBlobs(f,S.maxImgs-blobs.length));
+      else if(f.type.startsWith('image/'))blobs.push(await imgToBlob(f));
+    }
+    if(!blobs.length)throw {code:'img'};
+    if(S.ctl.signal.aborted)throw {code:'cancelled'};
+    S.busy={kind:'extract',msg:'Claude is reading the pages…',files:blobs.length};render(true);
+    const r=await sampleCap.json(PROMPT,{images:blobs,signal:S.ctl.signal});
+    if(!r||typeof r!=='object'||Array.isArray(r))throw {code:'invalid_json'};
+    if(r.docType==='other'||!Array.isArray(r.items)||!r.items.length){S.busy=null;toast('No invoice lines were found on those pages.');render(true);return}
+    S.sheet={mode:'edit',jobId:null,d:{client:'',container:'',sources:blobs.map(b=>({blob:b,url:URL.createObjectURL(b)})),ex:fromModel(r)},notes:''};
+    S.busy=null;render(true);scrollTo(0,0);
+  }catch(e){
+    S.busy=null;const m=ERR[e&&e.code];toast(e&&e.code in ERR?m:'Reading failed. Try again, or enter the lines by hand.');render(true);
+  }
+}
+function freeSheet(){if(S.sheet)S.sheet.d.sources.forEach(s=>{if(s.blob)try{URL.revokeObjectURL(s.url)}catch(e){}});S.sheet=null}
+function openJob(id,edit){
+  const j=jobById(id);if(!j||!j.extraction){toast('That record has no extraction.');return}
+  S.sheet={mode:edit?'edit':'view',jobId:id,d:{client:j.client||'',container:j.container||'',sources:(j.sources||[]).map(s=>({id:s.id,url:'/_blob/'+s.id})),ex:clone(j.extraction)},notes:j.notes||''};
+  render(true);scrollTo(0,0);
+}
+function refreshSummary(){const s=$('#sheetSummary');if(s&&S.sheet){s.innerHTML=sheetSummary(S.sheet.d);$('#sheetActions').innerHTML=sheetActions(S.sheet.d)}}
+function refreshRow(i){
+  const it=S.sheet.d.ex.items[i];if(!it)return;
+  for(const f of ['hs','qty','value']){const el=document.getElementById(`it-${i}-${f}`);if(el){el.classList.remove('fc-a','fc-r','fc-h');const c=fcls(it,f);if(c)el.classList.add(c)}}
+  const b=$('#hsn-'+i);if(b)b.innerHTML=hsNote(it);
+  refreshSummary();
+}
+async function saveSheet(submit){
+  if(S.saving)return;const sh=S.sheet,d=sh.d,a=analyse(d.ex);
+  if(submit&&a.blocked){toast('Cannot submit: '+a.blocked+'.');return}
+  if(!d.client.trim()&&!d.container.trim()){toast('Add a client name or a container number first.');return}
+  S.saving=true;let lost=false;
+  try{
+    const sources=[];
+    for(const s of d.sources){
+      if(s.id){sources.push({id:s.id});continue}
+      if(s.blob&&assetsCap){try{const r=await assetsCap.upload(s.blob);s.id=r.id;sources.push({id:r.id})}catch(e){lost=true;console.warn('asset',e)}}else if(s.blob)lost=true;
+    }
+    const ex=S.jobs.find(x=>x.id===sh.jobId),id=sh.jobId||store.newId('jobs'),now=Date.now();
+    const base=ex?{...ex}:{status:'Awaiting Docs',terminal:'',arrival:'',freeEnd:'',boe:'',createdAt:now,createdBy:me()};delete base.id;
+    const job={...base,client:d.client.trim(),container:d.container.trim().toUpperCase(),notes:sh.notes||'',extraction:clone(d.ex),sources,updatedAt:now,submittedAt:submit?now:null,needsAdmin:a.needsAdmin};
+    await store.set('jobs',id,job);
+    await logEvent(submit?(a.needsAdmin?'submitted':'cleared'):'extracted',{id,...job},submit?`${a.n} lines: ${a.counts.g} green, ${a.counts.a} amber, ${a.counts.r} red`:'draft saved');
+    toast((submit?(a.needsAdmin?'Submitted for admin sign-off.':'Submitted. Every line was green.'):'Draft saved.')+(lost?' The source pages could not be saved.':''));
+    freeSheet();S.tab=submit?'queue':'intake';if(submit)S.qFilter=a.needsAdmin?'pending':'done';
+  }catch(e){console.warn(e);toast(e&&e.code==='quota_exceeded'?'Shared storage is full. Remove old records, then try again.':'Could not save. Try again.')}
+  finally{S.saving=false;render(true);scrollTo(0,0)}
+}
+async function decide(kind){
+  const sh=S.sheet,j=sh&&jobById(sh.jobId);if(!j||rState(j)!=='pending')return;
+  const note=(($('#dec-note')||{}).value||'').trim();
+  if(kind==='returned'&&!note){toast('Add a short note so the agent knows what to fix.');return}
+  try{
+    await store.set('approvals',j.id,{decision:kind,submittedAt:j.submittedAt,by:me(),at:Date.now(),note});
+    await logEvent(kind,j,(note||'')+(kind==='approved'&&j.createdBy===me()?' (own submission)':''));
+    toast(kind==='approved'?'Approved.':'Returned to the agent.');freeSheet();S.tab='queue';
+  }catch(e){console.warn(e);toast('Could not record the decision. Only admins can approve or return.')}
+  render(true);
+}
+function startLog(id){
+  const j=id==='new'?null:jobById(id);if(id!=='new'&&!j)return;
+  S.tab='log';S.sheet=null;S.logEdit=id;S.logDel=false;
+  S.logForm=j?{client:j.client||'',container:j.container||'',boe:j.boe||'',terminal:j.terminal||'',arrival:j.arrival||'',freeEnd:j.freeEnd||'',status:j.status||'Awaiting Docs',notes:j.notes||''}
+    :{client:'',container:'',boe:'',terminal:'',arrival:todayISO(),freeEnd:'',status:'Awaiting Docs',notes:''};
+  render(true);scrollTo(0,0);
+}
+async function logSave(){
+  const g=S.logForm;
+  if(!g.client.trim()&&!g.container.trim()){toast('Add a client name or a container number.');return}
+  const f={client:g.client.trim(),container:g.container.trim().toUpperCase(),boe:g.boe.trim(),terminal:g.terminal,arrival:g.arrival,freeEnd:g.freeEnd,status:g.status,notes:g.notes.trim(),updatedAt:Date.now()};
+  if(f.container&&S.jobs.some(j=>j.id!==S.logEdit&&j.container===f.container))toast('Another consignment already uses this number. Saved anyway.');
+  try{
+    if(S.logEdit==='new'){
+      const id=store.newId('jobs');
+      await store.set('jobs',id,{...f,createdAt:Date.now(),createdBy:me(),extraction:null,sources:[],submittedAt:null,needsAdmin:false});
+      await logEvent('created',{id,...f},'');
+    }else{await store.update('jobs',S.logEdit,f);await logEvent('edited',{id:S.logEdit,...f},'')}
+    S.logEdit=null;S.logForm=null;toast('Saved.');
+  }catch(e){console.warn(e);toast('Could not save. Try again.')}
+  render(true);
+}
+async function logDelete(){
+  if(!S.logDel){S.logDel=true;render(true);return}
+  const j=jobById(S.logEdit);if(!j)return;
+  try{await store.del('jobs',j.id);try{await store.del('approvals',j.id)}catch(e){}await logEvent('deleted',j,'');S.logEdit=null;S.logForm=null;S.logDel=false;toast('Removed.')}
+  catch(e){toast('Could not remove it.')}
+  render(true);
+}
+async function sha256(t){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return ''}}
+async function exportCsv(name,rows,fp){
+  if(!dlCap){toast('Downloads are not available in this view.');return}
+  const text=toCsv(rows);
+  try{if(fp)S.fp=await sha256(text);await dlCap.save({filename:name,data:text});toast('File saved.')}
+  catch(e){if(!e||e.code!=='declined')toast('Could not save the file.')}
+  render(true);
+}
+const stamp=()=>new Date().toISOString().slice(0,10);
+function exportJobs(){
+  exportCsv(`consignments-${stamp()}.csv`,[['Client','Container or chassis','BoE','Terminal','Arrival','Free time ends','Status','Invoice state','Notes'],
+    ...S.jobs.slice().sort(jobSort).map(j=>[j.client,j.container,j.boe,j.terminal,j.arrival,j.freeEnd,j.status,RS[rState(j)][0],j.notes])]);
+}
+function exportAudit(){
+  exportCsv(`audit-trail-${stamp()}.csv`,[['When (UTC)','Who','Action','Consignment','Detail'],
+    ...S.audit.map(a=>[new Date(a.at).toISOString(),nameOf(a.by),ACT[a.action]||a.action,a.ref,a.summary])],true);
+}
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el||el.tagName==='SELECT')return;
+  const a=el.dataset.act,v=el.dataset.v,id=el.dataset.id,i=Number(el.dataset.i);
+  switch(a){
+    case 'tab':freeSheet();S.logEdit=null;S.tab=v;render(true);break;
+    case 'qf':S.qFilter=v;render(true);break;
+    case 'open':openJob(id);break;
+    case 'editjob':openJob(S.sheet.jobId,true);break;
+    case 'back':
+      if(S.sheet&&S.sheet.mode==='edit'&&!S.sheet.confirmBack){S.sheet.confirmBack=true;toast('Unsaved changes will be lost. Press Back again to leave.');break}
+      freeSheet();render(true);break;
+    case 'discard':
+      if(!S.sheet.confirmDiscard){S.sheet.confirmDiscard=true;refreshSummary();break}
+      freeSheet();render(true);break;
+    case 'manual':
+      if(!S.me.canWrite){toast('You have read-only access here.');break}
+      S.sheet={mode:'edit',jobId:null,d:{client:'',container:'',sources:[],ex:{supplier:'',invoiceNo:'',invoiceDate:'',currency:'',incoterm:'',total:'',items:[blankItem(true)],warnings:[]}},notes:''};render(true);break;
+    case 'addline':S.sheet.d.ex.items.push(blankItem(true));render(true);break;
+    case 'rmline':S.sheet.d.ex.items.splice(i,1);render(true);break;
+    case 'savedraft':saveSheet(false);break;
+    case 'submit':saveSheet(true);break;
+    case 'approve':decide('approved');break;
+    case 'return':decide('returned');break;
+    case 'logedit':startLog(id);break;
+    case 'logsave':logSave();break;
+    case 'logcancel':S.logEdit=null;S.logForm=null;S.logDel=false;render(true);break;
+    case 'logdel':logDelete();break;
+    case 'expjobs':exportJobs();break;
+    case 'expaudit':exportAudit();break;
+    case 'stop':if(S.ctl)S.ctl.abort();break;
+  }
+});
+document.addEventListener('input',e=>{
+  const t=e.target,sh=S.sheet;
+  if(sh&&sh.mode==='edit'){
+    if(t.dataset.f!==undefined){
+      const i=Number(t.dataset.i),f=t.dataset.f,it=sh.d.ex.items[i];if(!it)return;
+      if(f==='hs')it.hs=normHS(t.value);else if(f==='qty'||f==='value')it[f]=Number(String(t.value).replace(/,/g,''))||0;else it[f]=t.value;
+      if(f==='hs'||f==='qty'||f==='value'){it.e=it.e||{};it.e[f]=true}
+      refreshRow(i);return;
+    }
+    if(t.dataset.m){
+      const k=t.dataset.m;
+      if(k==='client'||k==='container')sh.d[k]=t.value;else if(k==='notes')sh.notes=t.value;
+      else sh.d.ex[k]=k==='total'?(t.value===''?'':Number(t.value)||0):t.value;
+      refreshSummary();return;
+    }
+  }
+  if(S.logEdit&&t.dataset.l){S.logForm[t.dataset.l]=t.value;if(t.dataset.l==='container'){const c=$('#refchip');if(c)c.innerHTML=refChip(t.value)}return}
+  if(t.id==='jq'){S.jFilter.q=t.value;render(true)}
+});
+document.addEventListener('change',async e=>{
+  const t=e.target;
+  if(t.id==='fileIn'){const f=[...t.files];t.value='';handleFiles(f);return}
+  if(t.id==='js'){S.jFilter.status=t.value;render(true);return}
+  if(t.id==='m-attach'&&S.sheet){
+    const j=jobById(t.value);S.sheet.jobId=j?j.id:null;
+    if(j){S.sheet.d.client=j.client||'';S.sheet.d.container=j.container||''}
+    render(true);return;
+  }
+  if(t.dataset.act==='status'){
+    const j=jobById(t.dataset.id);if(!j||j.status===t.value)return;const prev=j.status;
+    try{await store.update('jobs',j.id,{status:t.value,updatedAt:Date.now()});await logEvent('status',j,prev+' to '+t.value)}
+    catch(err){toast('Could not change the status.');render(true)}
+  }
+});
+document.addEventListener('dragover',e=>{const d=$('#drop');if(d&&e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();d.classList.add('over')}});
+document.addEventListener('dragleave',e=>{const d=$('#drop');if(d&&!d.contains(e.relatedTarget))d.classList.remove('over')});
+document.addEventListener('drop',e=>{const d=$('#drop');if(d&&e.dataTransfer&&e.dataTransfer.files.length){e.preventDefault();d.classList.remove('over');handleFiles(e.dataTransfer.files)}});
+async function boot(){
+  render(true);
+  const c=window.claude;
+  if(c&&c.use){
+    const get=n=>Promise.race([c.use(n),new Promise(r=>setTimeout(()=>r(null),12000))]).catch(()=>null);
+    [db,userCap,sampleCap,dlCap,assetsCap]=await Promise.all(['db','user','sample','downloads','assets'].map(get));
+  }
+  if(sampleCap){
+    try{const l=await sampleCap.limits();if(l&&l.images)S.maxImgs=Math.min(l.images.maxCount||6,8);else sampleCap=null}catch(e){sampleCap=null}
+  }
+  if(userCap){
+    try{const m=await userCap.me();S.me.id=m.id;S.me.name=m.name||'';S.me.isAdmin=!!(m.canEdit||m.isOwner)}catch(e){}
+    const w=await userCap.can('data.write').catch(()=>null);S.me.canWrite=w!==false;
+  }
+  if(!db){S.local=true;S.me.isAdmin=true;S.me.id=null}
+  S.ready=true;
+  store.sub('jobs',d=>{S.jobs=d;scheduleRender()});
+  store.sub('approvals',d=>{const m={};d.forEach(x=>{m[x.id]=x});S.approvals=m;scheduleRender()});
+  store.sub('audit',d=>{S.audit=d.slice().sort((a,b)=>(b.at||0)-(a.at||0));scheduleRender()});
+  render(true);
+}
+boot();
+</script>
